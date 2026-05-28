@@ -1,4 +1,66 @@
-path_classifiers:
+import cv2
+import numpy as np
+
+# 1. इमेज लोड करें (यहाँ अपनी कैरम बोर्ड की इमेज का पाथ दें)
+# ध्यान रहे: यह एक स्टेटिक इमेज पर गोटियाँ ढूंढने का एजुकेशनल कोड है
+image_path = 'carrom_board.jpg' 
+img = cv2.imread(image_path)
+
+if img is None:
+    print("Error: इमेज नहीं मिली! कृपया सही पाथ डालें।")
+        # टेस्टिंग के लिए एक डमी ब्लैक इमेज बना लेते हैं अगर असली इमेज न हो
+            img = np.zeros((500, 500, 3), dtype=np.uint8)
+                # डमी स्ट्राइकर (सफ़ेद) और गोटी (लाल) ड्रा कर रहे हैं
+                    cv2.circle(img, (100, 400), 20, (255, 255, 255), -1) # Striker
+                        cv2.circle(img, (250, 250), 15, (0, 0, 255), -1)   # Coin
+                            cv2.circle(img, (450, 50), 25, (50, 50, 50), -1)    # Pocket
+                            
+                            output = img.copy()
+                            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                            
+                            # 2. Hough Circles का इस्तेमाल करके गोल गोटियों को डिटेक्ट करना
+                            # यह एल्गोरिथ्म इमेज में गोल शेप्स को ढूंढता है
+                            circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, dp=1, minDist=30,
+                                                       param1=50, param2=30, minRadius=10, maxRadius=40)
+                                                       
+                                                       detected_coins = []
+                                                       
+                                                       if circles is not None:
+                                                           circles = np.uint16(np.around(circles))
+                                                               for i in circles[0, :]:
+                                                                       center_x, center_y = i[0], i[1]
+                                                                               radius = i[2]
+                                                                                       detected_coins.append((center_x, center_y))
+                                                                                               
+                                                                                                       # बोर्ड पर मिली हुई गोटियों के चारों तरफ हरा सर्कल बनाना
+                                                                                                               cv2.circle(output, (center_x, center_y), radius, (0, 255, 0), 2)
+                                                                                                                       cv2.circle(output, (center_x, center_y), 2, (0, 0, 255), 3) # सेंटर पॉइंट
+                                                                                                                       
+                                                                                                                       # 3. सिंपल जियोमेट्री से ऐम (Aim Line) का अंदाज़ा लगाना
+                                                                                                                       # मान लेते हैं कि पहली डिटेक्ट हुई चीज़ स्ट्राइकर है और दूसरी गोटी
+                                                                                                                       if len(detected_coins) >= 2:
+                                                                                                                           striker = detected_coins[0]
+                                                                                                                               coin = detected_coins[1]
+                                                                                                                                   
+                                                                                                                                       # स्ट्राइकर से गोटी तक की सीधी रेखा (Aim Line)
+                                                                                                                                           cv2.line(output, striker, coin, (255, 255, 0), 2)
+                                                                                                                                               
+                                                                                                                                                   # गोटी से आगे का रास्ता (Trajectory Projection)
+                                                                                                                                                       # यह सिर्फ समझने के लिए एक बेसिक सीधा एक्सटेंशन है
+                                                                                                                                                           dx = coin[0] - striker[0]
+                                                                                                                                                               dy = coin[1] - striker[1]
+                                                                                                                                                                   
+                                                                                                                                                                       future_x = coin[0] + dx
+                                                                                                                                                                           future_y = coin[1] + dy
+                                                                                                                                                                               
+                                                                                                                                                                                   # गोटी टकराने के बाद कहाँ जा सकती है (प्रेडिक्शन लाइन)
+                                                                                                                                                                                       cv2.line(output, coin, (future_x, future_y), (0, 165, 255), 2, cv2.LINE_AA)
+                                                                                                                                                                                       
+                                                                                                                                                                                       # 4. रिज़ल्ट दिखाना
+                                                                                                                                                                                       cv2.imshow('Carrom Vision - Aim Assist Concept', output)
+                                                                                                                                                                                       cv2.waitKey(0)
+                                                                                                                                                                                       cv2.destroyAllWindows()
+                                                                                                                                                                                       path_classifiers:
   library:
     - "Python/Templates/Django/ProjectTemplates/Python/Web/StarterDjangoProject/jquery-1.10.2.js"
     - "Python/Templates/Django/ProjectTemplates/Python/Web/StarterFlaskJadeProject/jquery-1.10.2.js"
